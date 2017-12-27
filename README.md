@@ -1,5 +1,5 @@
-# limiter-framework
-基于RateLimiter的服务限流工具
+# ratelimiter-framework
+用于接口层的服务限流框架
 
 # 项目简介
 1. 在google guava的RateLimiter基础上，结合spring aop，实现的一个可用于接口限流的框架，项目需要依赖spring框架。<br>
