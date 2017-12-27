@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+
+<project name="ratelimiter-framework" basedir="." default="build">
+    <property name="src.dir" value="src"/>
+    <property name="build" value="build"/>
+    <property name="build.classes" value="build/classes"/>
+    <property name="repository.dir" value="deploy"/>
+    <property name="conf.file" value="applicationContext-ratelimiter-framework.xml"/>
+    <property name="jar.file" value="ratelimiter-framework.jar"/>
+    <property name="src.file" value="ratelimiter-framework.zip"/>
+    <condition property="mvn" value="mvn.bat" else="mvn">
+        <os family="windows"/>
+    </condition>
+
+    <path id="repository-libs">
+        <fileset dir="lib">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+    <!-- clean -->
+    <target name="clean">
+        <delete dir="${build}"/>
+        <mkdir dir="${build}"/>
+    </target>
+
+    <!-- mvn compile -->
+    <target name="compile" depends="clean" description="编译代码">
+        <exec dir="${basedir}" executable="${mvn}" failonerror="true">
+            <arg line="compile"/>
+        </exec>
+    </target>
+
+    <target name="build" depends="compile" description="构建jar包">
+        <jar destfile="${repository.dir}/lib/${jar.file}">
+            <fileset dir="${build.classes}">
+                <include name="**"/>
+                <exclude name="com/netease/mail/ratelimiter/test/**"/>
+                <exclude name="logback.xml"/>
+            </fileset>
+        </jar>
+        <zip destfile="${repository.dir}/src/${src.file}">
+            <fileset dir="${src.dir}">
+                <include name="**"/>
+            </fileset>
+        </zip>
+        <delete dir="${build.classes}"/>
+    </target>
+
+    <target name="mvnrefresh">
+        <exec executable="${mvn}" failonerror="true">
+            <arg value="eclipse:clean"/>
+        </exec>
+        <exec executable="${mvn}" failonerror="true">
+            <arg value="eclipse:eclipse"/>
+        </exec>
+    </target>
+
+</project>
