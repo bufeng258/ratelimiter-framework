@@ -11,7 +11,7 @@ import com.bufeng.ratelimiter.strategy.RateLimiterStrategy;
 
 /**
  * 限流处理切面类
- * 
+ *
  * @author liuhailong 2017/10/10
  */
 @Aspect
@@ -35,6 +35,8 @@ public class RateLimiterAspect {
             case COUNTER_RATELIMITER:
                 result = counterRateLimiterStrategy.handle(pjp, rateLimiterMethod);
                 break;
+            default:
+                throw new IllegalArgumentException("unsupported rateLimiterType:" + rateLimiterMethod.type());
         }
         return result;
     }

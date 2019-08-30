@@ -5,7 +5,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.bufeng.ratelimiter.test.QueryParam;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.common.collect.Lists;
@@ -18,6 +21,8 @@ public class LoginServiceTest extends TestBase {
 
     @Autowired
     private LoginService loginService;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoginServiceTest.class);
 
     /**
      * 计数器算法限流测试
@@ -44,7 +49,7 @@ public class LoginServiceTest extends TestBase {
             startTime = System.currentTimeMillis();
         }
         try {
-            for (Runnable task: tasks) {
+            for (Runnable task : tasks) {
                 executorService.submit(task);
                 TimeUnit.MILLISECONDS.sleep(sleepTime);
             }
@@ -52,9 +57,9 @@ public class LoginServiceTest extends TestBase {
             executorService.shutdown();
         }
         long endTime = System.currentTimeMillis();
-        System.out.println("request consume time:" + (endTime - startTime));
+        LOGGER.info("request consume time:" + (endTime - startTime));
         while (!executorService.awaitTermination(1, TimeUnit.SECONDS)) {
-            System.out.println("Executors is not terminal");
+            LOGGER.info("Executors is not terminal");
         }
     }
 
@@ -69,7 +74,11 @@ public class LoginServiceTest extends TestBase {
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
-                    loginService.getUser(1);
+                    try {
+                        loginService.getUser(1);
+                    } catch (Exception e) {
+                        LOGGER.info("loginService.getUser cause exception ", e);
+                    }
                 }
             };
             tasks.add(runnable);
@@ -79,7 +88,7 @@ public class LoginServiceTest extends TestBase {
         int sleepTime = 1000 / size;
         long startTime = System.currentTimeMillis();
         try {
-            for (Runnable task: tasks) {
+            for (Runnable task : tasks) {
                 executorService.submit(task);
                 TimeUnit.MILLISECONDS.sleep(sleepTime);
             }
@@ -87,10 +96,21 @@ public class LoginServiceTest extends TestBase {
             executorService.shutdown();
         }
         long endTime = System.currentTimeMillis();
-        System.out.println("request consume time:" + (endTime - startTime));
+        LOGGER.info("request consume time:" + (endTime - startTime));
         while (!executorService.awaitTermination(1, TimeUnit.SECONDS)) {
-            System.out.println("Executors is not terminal");
+            LOGGER.info("Executors is not terminal");
         }
+    }
+
+    /**
+     * 测试spel表达式
+     */
+    @Test
+    public void testQueryUser() {
+        QueryParam queryParam = new QueryParam();
+        queryParam.setUserId(100);
+        queryParam.setType("buyer");
+        loginService.queryUser(queryParam);
     }
 
 }

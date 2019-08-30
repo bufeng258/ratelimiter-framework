@@ -12,4 +12,6 @@ public interface LoginService {
 
     void getUser(long userId);
 
+    void queryUser(QueryParam queryParam);
+
 }

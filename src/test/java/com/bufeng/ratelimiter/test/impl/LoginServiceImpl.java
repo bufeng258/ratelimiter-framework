@@ -1,5 +1,6 @@
 package com.bufeng.ratelimiter.test.impl;
 
+import com.bufeng.ratelimiter.test.QueryParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -26,13 +27,21 @@ public class LoginServiceImpl implements LoginService {
         logger.info("add user fallBack method execute");
     }
 
-    @RateLimiterMethod(type = RateLimiterType.GUAVA_RATELIMITER, qps = 5, fallBackMethod = "getUserFallBack")
+    @RateLimiterMethod(key = "loginService.getUser", type = RateLimiterType.GUAVA_RATELIMITER, qps = 5)
     @Override
     public void getUser(long userId) {
         logger.info("get user execute");
     }
 
-    public void getUserFallBack(long userId) {
-        logger.info("get user fallBack method execute");
+    /**
+     * 测试spel表达式
+     *
+     * @param queryParam
+     */
+    @RateLimiterMethod(key = "loginService.queryUser", spel = "#queryParam.type",
+        type = RateLimiterType.GUAVA_RATELIMITER, qps = 2)
+    @Override
+    public void queryUser(QueryParam queryParam) {
+        logger.info("query user execute");
     }
 }
