@@ -4,9 +4,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.bufeng.ratelimiter.aop.RateLimiterType;
+import com.bufeng.ratelimiter.strategy.RateLimiterStrategyFactory;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
 
 import com.google.common.cache.CacheBuilder;
@@ -20,8 +23,8 @@ import com.bufeng.ratelimiter.strategy.RateLimiterStrategy;
  *
  * @author liuhailong 2017/11/11
  */
-@Service("counterRateLimiterStrategy")
-public class CounterRateLimiterStrategy extends RateLimiterStrategy {
+@Service
+public class CounterRateLimiterStrategy extends RateLimiterStrategy implements InitializingBean {
 
     private static final Logger logger = LoggerFactory.getLogger(CounterRateLimiterStrategy.class);
 
@@ -33,9 +36,9 @@ public class CounterRateLimiterStrategy extends RateLimiterStrategy {
 
     @Override
     public Object handle(ProceedingJoinPoint pjp, RateLimiterMethod rateLimiterMethod) throws Throwable {
-        String key = createRateLimiterKey(pjp, rateLimiterMethod);
-        logger.info("counterRateLimiter handle start,key:{}", key);
-        LoadingCache<Long, AtomicLong> counter = createCouter(key, rateLimiterMethod);
+        String rateLimiterKey = createRateLimiterKey(pjp, rateLimiterMethod);
+        logger.info("counterRateLimiter handle start,rateLimiterKey:{}", rateLimiterKey);
+        LoadingCache<Long, AtomicLong> counter = createCouter(rateLimiterKey, rateLimiterMethod);
         //获取当前时间戳,然后取秒数来作为key进行计数统计和限流
         long currentSecond = System.currentTimeMillis() / 1000;
         long qps = rateLimiterMethod.qps();
@@ -48,7 +51,7 @@ public class CounterRateLimiterStrategy extends RateLimiterStrategy {
             return pjp.proceed();
         }
         //被限流后,进入限流处理逻辑
-        return fallBackMethodExecute(key, pjp, rateLimiterMethod);
+        return fallBackMethodExecute(rateLimiterKey, pjp, rateLimiterMethod);
     }
 
     /**
@@ -77,5 +80,10 @@ public class CounterRateLimiterStrategy extends RateLimiterStrategy {
             }
         }
         return result;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        RateLimiterStrategyFactory.register(RateLimiterType.COUNTER_RATELIMITER, this);
     }
 }

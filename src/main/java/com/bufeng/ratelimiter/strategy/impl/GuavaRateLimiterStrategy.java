@@ -3,9 +3,12 @@ package com.bufeng.ratelimiter.strategy.impl;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import com.bufeng.ratelimiter.aop.RateLimiterType;
+import com.bufeng.ratelimiter.strategy.RateLimiterStrategyFactory;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
 
 import com.google.common.util.concurrent.RateLimiter;
@@ -17,8 +20,8 @@ import com.bufeng.ratelimiter.strategy.RateLimiterStrategy;
  *
  * @author liuhailong 2017/11/11
  */
-@Service("guavaRateLimiterStrategy")
-public class GuavaRateLimiterStrategy extends RateLimiterStrategy {
+@Service
+public class GuavaRateLimiterStrategy extends RateLimiterStrategy implements InitializingBean {
 
     private static final Logger logger = LoggerFactory.getLogger(GuavaRateLimiterStrategy.class);
 
@@ -31,9 +34,9 @@ public class GuavaRateLimiterStrategy extends RateLimiterStrategy {
 
     @Override
     public Object handle(ProceedingJoinPoint pjp, RateLimiterMethod rateLimiterMethod) throws Throwable {
-        String key = createRateLimiterKey(pjp, rateLimiterMethod);
-        logger.info("guavaRateLimiter handle start,key:{}", key);
-        RateLimiter rateLimiter = createLimiter(key, rateLimiterMethod);
+        String rateLimiterKey = createRateLimiterKey(pjp, rateLimiterMethod);
+        logger.info("guavaRateLimiter handle start,rateLimiterKey:{}", rateLimiterKey);
+        RateLimiter rateLimiter = createLimiter(rateLimiterKey, rateLimiterMethod);
         if (rateLimiter == null) {
             logger.info("rateLimiter is null,method:{}", pjp.getSignature().toLongString());
             return pjp.proceed();
@@ -45,7 +48,7 @@ public class GuavaRateLimiterStrategy extends RateLimiterStrategy {
             return pjp.proceed();
         }
         //限流后,进入限流处理逻辑
-        return fallBackMethodExecute(key, pjp, rateLimiterMethod);
+        return fallBackMethodExecute(rateLimiterKey, pjp, rateLimiterMethod);
     }
 
     /**
@@ -67,5 +70,10 @@ public class GuavaRateLimiterStrategy extends RateLimiterStrategy {
             }
         }
         return result;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        RateLimiterStrategyFactory.register(RateLimiterType.GUAVA_RATELIMITER, this);
     }
 }

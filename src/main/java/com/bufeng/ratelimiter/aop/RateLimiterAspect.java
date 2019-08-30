@@ -1,13 +1,12 @@
 package com.bufeng.ratelimiter.aop;
 
+import com.bufeng.ratelimiter.strategy.RateLimiterStrategy;
+import com.bufeng.ratelimiter.strategy.RateLimiterStrategyFactory;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-
-import com.bufeng.ratelimiter.strategy.RateLimiterStrategy;
 
 /**
  * 限流处理切面类
@@ -19,26 +18,14 @@ import com.bufeng.ratelimiter.strategy.RateLimiterStrategy;
 @Order(1)
 public class RateLimiterAspect {
 
-    @Autowired
-    private RateLimiterStrategy guavaRateLimiterStrategy;
-
-    @Autowired
-    private RateLimiterStrategy counterRateLimiterStrategy;
-
     @Around("@annotation(rateLimiterMethod)")
     public Object method(ProceedingJoinPoint pjp, RateLimiterMethod rateLimiterMethod) throws Throwable {
-        Object result = null;
-        switch (rateLimiterMethod.type()) {
-            case GUAVA_RATELIMITER:
-                result = guavaRateLimiterStrategy.handle(pjp, rateLimiterMethod);
-                break;
-            case COUNTER_RATELIMITER:
-                result = counterRateLimiterStrategy.handle(pjp, rateLimiterMethod);
-                break;
-            default:
-                throw new IllegalArgumentException("unsupported rateLimiterType:" + rateLimiterMethod.type());
+        RateLimiterStrategy rateLimiterStrategy = RateLimiterStrategyFactory.getRateLimiterStrategy(
+            rateLimiterMethod.type());
+        if (rateLimiterStrategy == null) {
+            throw new IllegalArgumentException("unsupported rateLimiterType:" + rateLimiterMethod.type());
         }
-        return result;
+        return rateLimiterStrategy.handle(pjp, rateLimiterMethod);
     }
 
 }
